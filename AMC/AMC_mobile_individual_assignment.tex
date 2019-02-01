@@ -1,0 +1,329 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={AMC mobile individual assignment},
+            pdfauthor={Shen YANG},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{AMC mobile individual assignment}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Shen YANG}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{11/13/2018}
+
+
+\begin{document}
+\maketitle
+
+\subsubsection{Data Processing}\label{data-processing}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(dplyr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'dplyr'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# read data}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"Geo-Fence Analytics.csv"}\NormalTok{)}
+
+\CommentTok{# create imp_large}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{imp_large =} \KeywordTok{ifelse}\NormalTok{(imp_size }\OperatorTok{==}\StringTok{ "728x90"}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{geo_data}\OperatorTok{$}\NormalTok{imp_large =}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(geo_data}\OperatorTok{$}\NormalTok{imp_large)}
+
+\CommentTok{# create cat_entertainment}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{cat_entertainment =} \KeywordTok{ifelse}\NormalTok{(app_topcat }\OperatorTok{%in%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"IAB1"}\NormalTok{,}\StringTok{"IAB1-6"}\NormalTok{),}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{geo_data}\OperatorTok{$}\NormalTok{cat_entertainment =}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(geo_data}\OperatorTok{$}\NormalTok{cat_entertainment)}
+
+\CommentTok{# create cat_social}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{cat_social =} \KeywordTok{ifelse}\NormalTok{(app_topcat }\OperatorTok{==}\StringTok{ "IAB14"}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{geo_data}\OperatorTok{$}\NormalTok{cat_social =}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(geo_data}\OperatorTok{$}\NormalTok{cat_social)}
+
+\CommentTok{# create cat_tech}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{cat_tech =} \KeywordTok{ifelse}\NormalTok{(app_topcat }\OperatorTok{==}\StringTok{ "IAB19-6"}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{geo_data}\OperatorTok{$}\NormalTok{cat_tech =}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(geo_data}\OperatorTok{$}\NormalTok{cat_tech)}
+
+\CommentTok{# create os_ios}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{os_ios =} \KeywordTok{ifelse}\NormalTok{(device_os }\OperatorTok{==}\StringTok{ "iOS"}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{geo_data}\OperatorTok{$}\NormalTok{os_ios =}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(geo_data}\OperatorTok{$}\NormalTok{os_ios)}
+
+\CommentTok{# create distance}
+\KeywordTok{library}\NormalTok{(aspace)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: splancs
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: sp
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Spatial Point Pattern Analysis Code in S-Plus
+##  
+##  Version 2 - Spatial and Space-Time analysis
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'splancs'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     tribble
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: Hmisc
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: lattice
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: survival
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: Formula
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: ggplot2
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'Hmisc'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:splancs':
+## 
+##     zoom
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:dplyr':
+## 
+##     src, summarize
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     format.pval, units
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: shapefiles
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: foreign
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'shapefiles'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:foreign':
+## 
+##     read.dbf, write.dbf
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{distance =} \DecValTok{6371} \OperatorTok{*}\StringTok{ }\KeywordTok{acos}\NormalTok{(}\KeywordTok{cos}\NormalTok{(}\KeywordTok{as_radians}\NormalTok{(device_lat)) }\OperatorTok{*}\StringTok{ }
+\StringTok{                    }\KeywordTok{cos}\NormalTok{(}\KeywordTok{as_radians}\NormalTok{(geofence_lat)) }\OperatorTok{*}\StringTok{ }\KeywordTok{cos}\NormalTok{(}\KeywordTok{as_radians}\NormalTok{(device_lon) }\OperatorTok{-}\StringTok{ }\KeywordTok{as_radians}\NormalTok{(geofence_lon)) }
+                    \OperatorTok{+}\StringTok{ }\KeywordTok{sin}\NormalTok{(}\KeywordTok{as_radians}\NormalTok{(device_lat)) }\OperatorTok{*}\StringTok{ }\KeywordTok{sin}\NormalTok{(}\KeywordTok{as_radians}\NormalTok{(geofence_lat))) )}
+
+\CommentTok{# create distance_squared}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{distance_squared =}\NormalTok{ distance}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
+
+\CommentTok{# create ln_app_review_vol}
+\NormalTok{geo_data =}\StringTok{ }\KeywordTok{mutate}\NormalTok{(geo_data, }\DataTypeTok{ln_app_review_vol =} \KeywordTok{log}\NormalTok{(app_review_vol))}
+
+\KeywordTok{head}\NormalTok{(geo_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   imp_size app_id                                          app_name
+## 1   320x50     62 Dictionary.com Android APP - First look inventory
+## 2   320x50     62 Dictionary.com Android APP - First look inventory
+## 3   320x50     62 Dictionary.com Android APP - First look inventory
+## 4   320x50     62 Dictionary.com Android APP - First look inventory
+## 5   320x50     62 Dictionary.com Android APP - First look inventory
+## 6   320x50     62 Dictionary.com Android APP - First look inventory
+##   app_pub app_topcat app_review_vol app_review_val device_lat device_lon
+## 1               IAB5          63228            4.6   33.84575  -117.8250
+## 2               IAB5          63228            4.6   33.85843  -117.8605
+## 3               IAB5          63228            4.6   33.77808  -117.8752
+## 4               IAB5          63228            4.6   33.87387  -117.8174
+## 5               IAB5          63228            4.6   33.94048  -117.9675
+## 6               IAB5          63228            4.6   33.80514  -118.0167
+##   device_zip device_os geofence_lat geofence_lon gepfence_radius didclick
+## 1      92807   Android     33.83165    -117.8487          11.263        0
+## 2      92806   Android     33.88024    -117.8604          11.263        0
+## 3      92705   Android     33.81814    -117.9010          11.263        0
+## 4      92886   Android     33.86065    -117.8011          11.263        0
+## 5      90631   Android     33.92266    -117.9600          11.263        0
+## 6      90630   Android     33.84287    -118.0128          11.263        0
+##   imp_large cat_entertainment cat_social cat_tech os_ios distance
+## 1         0                 0          0        0      0 2.697389
+## 2         0                 0          0        0      0 2.425634
+## 3         0                 0          0        0      0 5.051299
+## 4         0                 0          0        0      0 2.102362
+## 5         0                 0          0        0      0 2.095628
+## 6         0                 0          0        0      0 4.211144
+##   distance_squared ln_app_review_vol
+## 1         7.275907           11.0545
+## 2         5.883701           11.0545
+## 3        25.515625           11.0545
+## 4         4.419927           11.0545
+## 5         4.391659           11.0545
+## 6        17.733735           11.0545
+\end{verbatim}
+
+
+\end{document}

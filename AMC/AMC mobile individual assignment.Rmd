@@ -1,0 +1,286 @@
+---
+title: "AMC Mobile Individual Assignment"
+author: "Shen YANG"
+date: "11/13/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Data Processing
+```{r message=FALSE}
+
+rm(list=ls())
+setwd("~/Documents/UCI/Customer and Social Analytics/Mobile Analytics Individual Assignment")
+
+library(dplyr)
+# read data
+geo_data = read.csv("Geo-Fence Analytics.csv")
+
+# create imp_large
+geo_data = mutate(geo_data, imp_large = ifelse(imp_size == "728x90",1,0))
+geo_data$imp_large = as.factor(geo_data$imp_large)
+
+# create cat_entertainment
+geo_data = mutate(geo_data, cat_entertainment = ifelse(app_topcat %in% c("IAB1","IAB1-6"),1,0))
+geo_data$cat_entertainment = as.factor(geo_data$cat_entertainment)
+
+# create cat_social
+geo_data = mutate(geo_data, cat_social = ifelse(app_topcat == "IAB14",1,0))
+geo_data$cat_social = as.factor(geo_data$cat_social)
+
+# create cat_tech
+geo_data = mutate(geo_data, cat_tech = ifelse(app_topcat == "IAB19-6",1,0))
+geo_data$cat_tech = as.factor(geo_data$cat_tech)
+
+# create os_ios
+geo_data = mutate(geo_data, os_ios = ifelse(device_os == "iOS",1,0))
+geo_data$os_ios = as.factor(geo_data$os_ios)
+
+# create distance
+library(aspace)
+geo_data = mutate(geo_data, distance = 6371 * acos(cos(as_radians(device_lat)) * 
+                    cos(as_radians(geofence_lat)) * cos(as_radians(device_lon) - as_radians(geofence_lon)) 
+                    + sin(as_radians(device_lat)) * sin(as_radians(geofence_lat))) )
+
+# create distance_squared
+geo_data = mutate(geo_data, distance_squared = distance^2)
+
+# create ln_app_review_vol
+geo_data = mutate(geo_data, ln_app_review_vol = log(app_review_vol))
+
+head(geo_data)
+```
+
+
+##Descriptive Statistics
+###Summary Statistics
+```{r message=FALSE}
+# summary statistics
+library(pastecs)
+col_name = c("didclick","distance","imp_large","cat_entertainment", "cat_social", "cat_tech", 
+             "os_ios", "ln_app_review_vol" , "app_review_val")
+for(i in 1:length(col_name)){
+  
+  if(col_name[i] %in% c("imp_large","cat_entertainment", "cat_social", "cat_tech", 
+                        "os_ios")){
+    print(col_name[i])
+    print(summary(geo_data[,which(colnames(geo_data)==col_name[i])]))
+  }else{
+    print(col_name[i])
+    print(stat.desc(geo_data[,which(colnames(geo_data)==col_name[i])]))
+  }
+  
+}
+```
+
+###The Correlations Among The Above Variables
+```{r}
+# the correlations among the above variables
+library(corrplot)
+data.matrix(geo_data[,which(colnames(geo_data) %in% col_name)]) %>%
+  cor() %>%
+  corrplot.mixed(lower.col = "black", number.cex = .85, tl.cex = 0.65)
+```
+
+###The Relationship Of Distance (X-Axis) And Click-Through-Rate (Y-Axis)
+```{r}
+# the relationship of distance (x-axis) and click-through-rate (y-axis)
+library(ggplot2)
+# create distance_group
+geo_data$distance_group[geo_data$distance > 10] = 7
+geo_data$distance_group[geo_data$distance <= 10] = 6
+geo_data$distance_group[geo_data$distance <= 7] = 5
+geo_data$distance_group[geo_data$distance <= 4] = 4
+geo_data$distance_group[geo_data$distance <= 2] = 3
+geo_data$distance_group[geo_data$distance <= 1] = 2
+geo_data$distance_group[geo_data$distance <= 0.5] = 1
+geo_data$distance_group = as.factor(geo_data$distance_group)
+
+# calculate the click_through_rate
+click_through_rate = c()
+for (i in 1:7) {
+  click_through_rate[i] = sum(geo_data$didclick[which(geo_data$distance_group==i)])/
+    length(which(geo_data$distance_group==i))
+}
+distance_click = data.frame(distance_group = c(1:7), click = click_through_rate)
+
+# plot click_through_rate ~ distance_group
+ggplot(data = distance_click, aes(distance_group, click)) +
+  geom_point() +
+  geom_smooth(alpha=0.3, se=T) + 
+  xlab("distance_group") 
+
+```
+
+###Explore Click_through_rate ~ Device
+```{r}
+# explore click_through_rate ~ device
+click_through_rate2 = c()
+click_through_rate2[1] = sum(geo_data$didclick[which(geo_data$device_os=="Android")])/
+  length(which(geo_data$device_os=="Android"))
+click_through_rate2[2] = sum(geo_data$didclick[which(geo_data$device_os=="iOS")])/
+  length(which(geo_data$device_os=="iOS"))
+
+device_click = data.frame(device = c("Android","iOS"), click = click_through_rate2)
+
+ggplot(data = device_click, aes(device, click)) +
+  geom_col() + 
+  ylab("click_through_rate") 
+```
+
+
+##Logistics Regression
+###Use whole data set
+```{r message=FALSE}
+#put all varibles into the regression
+geo_data$didclick = as.factor(geo_data$didclick)
+fit1 = glm(didclick ~ distance + distance_squared + imp_large + cat_entertainment + cat_social + 
+           cat_tech + os_ios + ln_app_review_vol + app_review_val, data = geo_data, family = "binomial")
+summary(fit1)
+
+# simplify the model
+
+#Variable Importance
+#To assess the relative importance of individual predictors in the model, we can also look at 
+# the absolute value of the t-statistic for each model parameter. 
+library(caret)
+varImp(fit1)
+
+#Delete non-significant varibles
+fit2 = glm(didclick ~ distance + distance_squared + imp_large + 
+             cat_tech + os_ios, data = geo_data, family = "binomial")
+summary(fit2)
+
+#Model comparison -> fit2 is better
+anova(fit1, fit2, test="Chisq")
+
+#Model Diagnosis
+par(mfrow=c(2,2))
+plot(fit2)
+par(mfrow=c(1,1))
+
+#Identify the outliers
+length(which(abs(resid(fit2))>3))
+summary(geo_data$didclick[which(abs(resid(fit2))>3)])
+```
+
+###Try to use choice-based sample
+We can see that all the observations which didclick = 1 have extrem large standard residual(higher than 3). I suppose that the reason is the sample of didclick = 0 (120739) is far more than the sample of didclick = 1 (828). In the next part, I try to use a choice-based sample to see whether we can improve the model. The choice-based sample consist of all the observations with didclick = 1, 828 in total, and 828 random selected observations. The sample size of choice-based sample is 828+828 = 1656.
+
+```{r}
+#Generate a choice-based sample
+geo_data_choice_based = filter(geo_data, didclick == 1)
+a = filter(geo_data, didclick == 0)
+set.seed(442)
+geo_data_choice_based = rbind(geo_data_choice_based, a[sample(dim(a)[1],828),])
+rm(a)
+
+#put all varibles into the regression at first
+fit1_choice_based = glm(didclick ~ distance + distance_squared + imp_large + cat_entertainment + cat_social + 
+                          cat_tech + os_ios + ln_app_review_vol + app_review_val, data = geo_data_choice_based, 
+                        family = "binomial")
+summary(fit1_choice_based)
+
+par(mfrow=c(2,2))
+plot(fit1_choice_based)
+par(mfrow=c(1,1))
+```
+
+####Liner Assumption
+The result of residual plots shows that the model is still not good. So I decided to examine the liner relationship between the log(p/(1-p)) and each predictor variables. The plots give evidence that the model against the liner assumption, so the model fit could be bad.
+
+```{r message=FALSE}
+#create a dataset for plot
+testdata = transmute(geo_data_choice_based, distance, distance_squared, ln_app_review_vol, app_review_val)
+predictors = colnames(testdata)
+library(tidyr)
+prob = predict(fit1_choice_based,type = "response")
+testdata = testdata %>%
+  mutate(logit = log(prob/(1-prob))) %>%
+  gather(key = "predictors", value = "predictor.value", -logit)
+
+#Create the scatter plots:
+ggplot(testdata, aes(logit, predictor.value)) +
+  geom_point(size = 0.5, alpha = 0.5) +
+  geom_smooth() +
+  facet_wrap(~predictors, scales = "free_y")
+
+```
+
+####Model Improvement
+Still something can be done to slightly improve the model.
+```{r message=FALSE}
+#Multicollinearity -> Either distance or distance^2 should be delete. Function varImp shows that distance is more important
+library(car)
+vif(fit1_choice_based)
+varImp(fit1_choice_based)
+
+#Delete unimportant varibles
+fit2_choice_based = glm(didclick ~ distance + imp_large + cat_entertainment + cat_tech,
+                        data = geo_data_choice_based, 
+                        family = "binomial")
+summary(fit2_choice_based)
+
+#Delete cat_entertainment since it is nolonger significant in model fit2_choice_based
+fit3_choice_based = glm(didclick ~ distance + imp_large + cat_tech,
+                        data = geo_data_choice_based, 
+                        family = "binomial")
+summary(fit3_choice_based)
+
+#Model comparison -> fit3_choice_based is better
+anova(fit3_choice_based, fit1_choice_based, test="Chisq")
+anova(fit3_choice_based, fit2_choice_based, test="Chisq")
+
+#Since a choice-based sample is used, offset should be considered
+populateRate = length(which(geo_data$didclick==1))/length(geo_data$didclick)
+clickRate = 0.5
+
+geo_data_choice_based$offsetvalue = log(((1 - populateRate)/populateRate)/((1 - clickRate)/clickRate))
+
+#Model with offset
+fit4_choice_based = glm(didclick ~ distance + imp_large + cat_tech,
+                        data = geo_data_choice_based, 
+                        family = "binomial", offset = offsetvalue)
+summary(fit4_choice_based)
+
+#Compare the model result of whole data set and choice-based sample
+#Use 'McFadden'. The measure ranges from 0 to just under 1, with values closer to zero indicating that the model has no predictive power.
+#detailed can be find in: https://www.r-bloggers.com/evaluating-logistic-regression-models/
+library(pscl)
+pR2(fit2)  
+pR2(fit4_choice_based)
+```
+
+####Model Evaluation 
+Using ROC cureve and confusion matrix. The AUC = 0.594 and Accuracy = 0.5815, which are not very good.
+```{r message=FALSE}
+#plot ROC curve
+library(pROC)
+g = roc(geo_data_choice_based$didclick ~ predict(fit4_choice_based,type = "response"))
+plot(g,print.thres = "best",print.auc=TRUE)
+#find the best threshold
+best_thres = coords(g, "best", ret=c("threshold", "specificity", "sensitivity"))
+print(best_thres)
+
+#confusion matrix
+as.numeric(predict(fit4_choice_based, newdata=geo_data_choice_based, type = "response") > best_thres[1]) %>%
+  confusionMatrix(reference = geo_data_choice_based$didclick)
+```
+
+
+####Coefficient Interpretation
+Generally, large impression size has a very negative effect on the click. Distance has a mild negative effect on the click while if the app_topcat equal to "IAB19-6", it will have a significant positive effect on the click.
+From the quantitative perspective, for example, if the app_topcat equal to "IAB19-6", the odds of click (p/(1-p)) will increase to around 1.87 time compared to app_topcat equal to others.
+```{r}
+exp(coef(fit4_choice_based))
+```
+
+
+
+
+
+
+
