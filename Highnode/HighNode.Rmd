@@ -1,0 +1,467 @@
+---
+title: "Midterm HighNode"
+author: "Shen YANG"
+date: "11/17/2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+---
+
+```{r}
+#read data
+rm(list=ls())
+setwd("~/Documents/UCI/Customer and Social Analytics/Midterm")
+highnode = read.csv("HighNote Data Midterm.csv")
+```
+
+---
+
+##Summary statistics
+
+```{r message=FALSE}
+library(psych)
+library(dplyr)
+options(digits = 5)
+options(scipen=3)
+
+#Overall summary statistics
+describe(highnode[-1])
+
+#Summary statistics for adopter
+describe(filter(highnode, adopter == 1)[-1])
+
+#Summary statistics for non-adopter
+describe(filter(highnode, adopter == 0)[-1])
+
+#Compare means between the adopter and non-adapter subsamples
+for (i in 1:15) {
+  
+  #skip adopter
+  if(i == 13) next()
+  
+  print(names(highnode[i+1]))
+  print(t.test(highnode[,i+1]~highnode$adopter))
+}
+
+```
+####Tentative conclusions
+After comparing the adopter and non-adopter subsamples, it could be concluded that adopter group has following attributes:
+
+- older (2 years), male (10% more), and not from US, UK or Germany (7% less)
+
+- more friend (2 times), average friend's age is older (1 year), from more countries (2 times), and more likely a subscriber (4 times)
+
+- longer time on the site (2 more month), listened to more songs (2 times), love more tracks (3 times), have more posts (4 times), playlist (2 times), and shouts (3 times)
+
+---
+
+##Data Visualization
+
+####Demographics
+The age distribution between non-adopter and adopter is almost the same. The average age of adopter is slightly larger than non-adopter. In the adopter group, the proportion of male is larger than non-adopter group. It can be concluded that the typical adopter is older male from the perspective of demographics.
+
+```{r message=FALSE}
+library(ggplot2)
+library(gridExtra)
+highnode$adopter = factor(highnode$adopter, labels = c("non-adopter","adopter"))
+
+#age histogram
+g1 = ggplot(highnode, aes(x = age))+
+    geom_histogram(aes(fill=adopter), binwidth = 1)+
+    labs(title="Age Histogram", 
+        subtitle="bin_width = 1", 
+        fill="", 
+        caption="Source: HighNode")  
+
+#age density
+g2 = ggplot(highnode, aes(x = age))+
+    geom_density(aes(fill=adopter), alpha=0.6)+
+    labs(title="Age Density", 
+        fill="", 
+        caption="Source: HighNode")  
+
+#gender bar
+highnode$male = factor(highnode$male, labels = c("female","male"))
+
+g3 = ggplot(filter(highnode, adopter=="adopter"), aes(adopter) )+
+    geom_bar(aes(fill=male), width = 0.3)+
+    labs(title="Gender in adopters", 
+        fill="", 
+        caption="Source: HighNode")+
+    xlab(" ")
+
+g4 = ggplot(filter(highnode, adopter=="non-adopter"), aes(adopter) )+
+    geom_bar(aes(fill=male), width = 0.3)+
+    labs(title="Gender in non-adopters", 
+        fill="", 
+        caption="Source: HighNode")+
+    xlab(" ")
+
+#plot
+grid.arrange(g1,g2,g3,g4,
+             top = "Demographics")
+```
+
+
+####Peer influence
+If the subscription rate of friends is defined as subscriber_friend_cnt/friend_cnt, the subscription rate of adopter group is more than 2 times higher than non-adopter group. This means a friend of adopter is more likely to be a subscriber. Also, the relationship between the number of friends and the number of friends who are premium subscribers is close to liner. There is no significant decrease when the number of friends getting large. As mentioned in summary statistics, adopter group will have more friends. In a word, the peer influence does exist. In addition, the adopter group has more friends who have larger average age, are from more countries, and are more likely to be a subscriber, which is shown in the t test above.
+
+```{r message=FALSE}
+#Friend_cnt vs Subscriber_friend_cnt
+g5 = ggplot(highnode, aes(x = friend_cnt, y = subscriber_friend_cnt))+
+  geom_point(aes(color = adopter), size = 1, alpha = 0.8)+
+  geom_smooth(aes(color = adopter), se = F)+
+  coord_cartesian(xlim=c(0, 2000), ylim=c(0, 75)) + 
+  labs(title="Friend_cnt vs Subscriber_friend_cnt",
+       color = " ", 
+       caption="Source: HighNode")
+
+#subscription rate
+highnode = mutate(highnode, subscription_rate = subscriber_friend_cnt/friend_cnt)
+adopter_subscription_rate = mean(highnode$subscription_rate[highnode$adopter == "adopter"])
+nonadopter_subscription_rate = mean(highnode$subscription_rate[highnode$adopter == "non-adopter"])
+
+g6 = ggplot(highnode, aes(x = ID, y = subscription_rate))+
+  geom_point(aes(color = adopter), size = 0.7, alpha = 0.8)+
+  labs(title="Subscription rate of friends",
+       color = " ", 
+       y = "Rate",
+       caption="Source: HighNode")
+
+g7 = ggplot(highnode, aes(x = adopter, y = subscription_rate)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3, fill = "seagreen")
+
+highnode$subscription_rate = NULL
+
+#plot
+grid.arrange(g6,g7,g5,
+             layout_matrix = rbind(c(1,1),
+                                   c(2,3)),
+             top = "Peer influence")
+```
+
+####User engagement
+In each aspects of user engagement, adopter group is  higher than non-adopter group. It could be assumed that the more user engaged in the site, the more likely he/she will become adopter.
+
+```{r}
+#songsListened
+g8 = ggplot(highnode, aes(x = adopter, y = songsListened)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3)+
+  labs(x = " ")
+
+#lovedTracks
+g9 = ggplot(highnode, aes(x = adopter, y = lovedTracks)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3)+
+  labs(x =" ")
+
+#posts
+g10 = ggplot(highnode, aes(x = adopter, y = posts)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3)+
+  labs(x = "Group")
+
+#playlists
+g11 = ggplot(highnode, aes(x = adopter, y = playlists)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3)+
+  labs(x = " ")
+  
+#shouts
+g12 = ggplot(highnode, aes(x = adopter, y = shouts)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3)+
+  labs(x = " ")
+
+g13 = ggplot(highnode, aes(x = adopter, y = tenure)) + 
+  geom_bar(stat = "summary", fun.y = "mean", width = 0.3)+
+  labs(x = " ")
+  
+#plots
+grid.arrange(g8,g9,g10,g11,g12,g13,nrow = 1,top = "User engagement", bottom = "Source: HighNode")
+```
+
+---
+
+##Propensity Score Matching (PSM)
+####Propensity score estimation
+```{r message=FALSE}
+#create a variable to represent treatment
+highnode = mutate(highnode, treat = ifelse(subscriber_friend_cnt>=1,1,0))
+
+#test the difference before PSM
+t.test((as.integer(highnode$adopter)-1)~highnode$treat)
+
+#logistic regression
+m_ps <- glm(treat ~ age + male + friend_cnt + avg_friend_age + avg_friend_male + friend_country_cnt 
+            + songsListened + lovedTracks + posts + playlists + shouts + tenure + good_country,
+            family = binomial(), data = highnode)
+summary(m_ps)
+
+#predict PSM value
+prs_df <- data.frame(pr_score = predict(m_ps, type = "response"),
+                     treat = m_ps$model$treat)
+head(prs_df)
+
+#Examining the region of common support
+labs <- paste("Actual treatment type :", c("having subscriber friends", "No subscriber friends"))
+prs_df %>%
+  mutate(treat = ifelse(treat == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = pr_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treat) +
+  xlab("Probability of having subscriber friends") +
+  theme_bw()
+```
+
+####Executing a matching algorithm
+```{r message=FALSE}
+#There is no missing value
+summary(is.na(highnode))
+
+#perform "nearest" matching algorithms
+library(MatchIt)
+mod_match <- matchit(treat ~ age + male + friend_cnt + avg_friend_age + avg_friend_male + friend_country_cnt 
+                     + songsListened + lovedTracks + posts + playlists + shouts + tenure + good_country,
+                     method = "nearest", data = highnode)
+
+#summary(mod_match)
+#plot(mod_match)
+
+#create a dataframe containing only the matched observations
+highnode_match <- match.data(mod_match)
+dim(highnode_match)
+```
+
+####Examining covariate balance in the matched sample
+
+From the visual inspection and mean difference, the matching result is good but not perfect. It is shown that 8 of 13 covariates are perfectly matched, including age, male, avg_friend_age, avg_friend_male, songsListened, playlists, tenure, and good_country. While 5 of 13 covariates are not matched so well, including friend_cnt, friend_country_cnt, lovedTracks, posts, and shouts. 
+
+
+```{r message=FALSE}
+highnode_match$treat = as.factor(highnode_match$treat)
+
+#Visual inspection
+#create a plotting function
+fn_bal <- function(dta, variable, treat) {
+  dta$variable <- dta[, variable]
+  support <- c(min(dta$variable), max(dta$variable))
+  ggplot(dta, aes(x = distance, y = variable, color = treat)) +
+    geom_point(alpha = 0.2, size = 1.3) +
+    geom_smooth(method = "loess", se = F) +
+    xlab("Propensity score") +
+    ylab(variable) +
+    theme_bw() +
+    ylim(support)
+}
+
+#plot
+library(gridExtra)
+
+highnode_match$male = as.integer(highnode_match$male)
+grid.arrange(
+   fn_bal(highnode_match, "age") + theme(legend.position = "none"),
+   fn_bal(highnode_match, "male"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+
+grid.arrange(
+   fn_bal(highnode_match, "friend_cnt") + theme(legend.position = "none"),
+   fn_bal(highnode_match, "avg_friend_age"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+
+grid.arrange(
+   fn_bal(highnode_match, "avg_friend_male") + theme(legend.position = "none"),
+   fn_bal(highnode_match, "friend_country_cnt"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+   
+grid.arrange(
+   fn_bal(highnode_match, "songsListened") + theme(legend.position = "none"),
+   fn_bal(highnode_match, "lovedTracks"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+
+grid.arrange(
+   fn_bal(highnode_match, "posts") + theme(legend.position = "none"),
+   fn_bal(highnode_match, "playlists"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+
+grid.arrange(
+   fn_bal(highnode_match, "shouts") + theme(legend.position = "none"),
+   fn_bal(highnode_match, "tenure"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+
+grid.arrange(
+   fn_bal(highnode_match, "good_country") + theme(legend.position = "none"),
+   top = "Visual inspection", 
+   nrow = 1
+)
+   
+
+#Difference-in-means
+highnode_name = names(highnode_match)[c(-1,-8,-14,-17,-18,-19)]
+
+#summary
+highnode_match %>%
+  group_by(treat) %>%
+  select(one_of(highnode_name)) %>%
+  summarise_all(funs(mean))
+
+#t test
+for (i in 1:13) {
+  print(highnode_name[i])
+  print(t.test(highnode_match[,highnode_name[i]]~highnode_match$treat))
+}
+
+```
+
+
+####Estimating treatment effects
+
+When performing t test on the after-matching data, the result of mean difference is significant. Around 17.8% of the user in treatment group is adopter, which is significantly large than the number of control group (around 8.6%, which is larger compared to the data before matching). The result is also robust in regression both with and without covariates. The coefficient treat is significant in two regression model mentioned above. 
+
+After controlling all the covariates, the treatment effect is still significant. It is reasonable to claim that the causal relationship exist between having subscriber friends and the likelihood of becoming an adopter. To be specific, having subscriber friends will increase the likelihood of becoming an adopter.
+
+```{r}
+#t test
+with(highnode_match, t.test( (as.integer(adopter)-1) ~ treat) )
+
+#regression without covariates
+fit_test1 = glm(adopter~treat, data = highnode_match, family = binomial())
+summary(fit_test1)
+
+#regression with covariates
+fit_test2 = glm(adopter~treat + age + male + friend_cnt + avg_friend_age + avg_friend_male + friend_country_cnt 
+                     + songsListened + lovedTracks + posts + playlists + shouts + tenure + good_country, 
+                data = highnode_match, family = binomial())
+summary(fit_test2)
+```
+
+---
+
+##Regression Analyses
+
+####First attempt
+Use all variables in the regression model. The summary result shows that avg_friend_male, posts and shouts are not significant.
+```{r}
+#data preprocssing
+highnode = read.csv("HighNote Data Midterm.csv")
+categorical_col_name = names(highnode)[c(3,14,16)]
+for (i in 1:3) {
+  highnode[,categorical_col_name[i]] = as.factor(highnode[,categorical_col_name[i]])
+}
+
+#put all variables into the regression
+fit1 = glm(adopter ~ age + male + friend_cnt + avg_friend_age + avg_friend_male + friend_country_cnt + 
+             subscriber_friend_cnt + songsListened + lovedTracks + posts + playlists + shouts + tenure + 
+             good_country, 
+           data = highnode, family = binomial())
+summary(fit1)
+
+```
+
+####Model improvement
+After deleting non-significant variables, the test result shows that there is no significant difference between previous model and simple model. So the simple model is preferred due to the simplicity. In addition, the is no multicollinearity problem since the VIF of all the variables are under 5, which is the rule of thumb.
+
+```{r message=FALSE}
+#delete non-significant variables
+fit2 = glm(adopter ~ age + male + friend_cnt + avg_friend_age + friend_country_cnt + avg_friend_male +
+             subscriber_friend_cnt + songsListened + lovedTracks + playlists + tenure + good_country, 
+           data = highnode, family = binomial())
+summary(fit2)
+
+#Model comparison -> fit2 is better for simplicity
+anova(fit1, fit2, test="Chisq")
+
+#Multicollinearity -> all the variables are smaller than 5, which is the rule of thumb
+library(car)
+vif(fit2)
+```
+
+####Model evaluation
+
+- McFadden's Pseudo-R2 (similar to R square)
+
+A rule of thumb of McFadden's pseudo R-squared is that ranging from 0.2 to 0.4 indicates very good model fit. The McFadden's Pseudo-R2 of the model is 0.0782, which is not very good.
+
+- ROC curve
+
+The AUC of the ROC = 0.739, which is good.
+
+- Confusion matrix and Cohen's kappa.
+
+The overall accuracy is 0.649. Cohen's kappa of the confusion matrix is 0.128, meaning that the model increases the accuracy by 12.8% compared to random classification
+
+```{r message=FALSE}
+#Use 'McFadden's Pseudo-R2'. The measure ranges from 0 to just under 1, with values closer to zero indicating that the model has no predictive power.
+#detailed can be find in: https://www.r-bloggers.com/evaluating-logistic-regression-models/
+library(pscl)
+pR2(fit2)  
+
+#plot ROC curve
+library(pROC)
+g = roc(highnode$adopter ~ predict(fit2,type = "response"))
+plot(g,print.thres = "best",print.auc=TRUE)
+#find the best threshold
+best_thres = coords(g, "best", ret=c("threshold", "specificity", "sensitivity"))
+print(best_thres)
+
+#confusion matrix and Kappa
+library(caret)
+as.numeric(predict(fit2, newdata = highnode, type = "response") > best_thres[1]) %>%
+  confusionMatrix(reference = highnode$adopter)
+
+#library(measures)
+#KAPPA(highnode$adopter, #truth
+#      as.numeric(predict(fit2, newdata = highnode, type = "response") > best_thres[1])) #predicted values 
+```
+
+####Coefficient Interpretation
+
+Generally, the following variables have a positive effect on the likelihood of becoming an adopter, including 
+
+- age, male, avg_friend_age, friend_country_cnt, avg_friend_male, subscriber_friend_cnt, songsListened, lovedTracks, and playlists.
+
+The following variables have a negative effect on the likelihood of becoming an adopter, including
+
+- friend_cnt, tenure, and good_country. 
+
+But friend_cnt, songsListened, lovedTracks, and tenure may not be significant in economical level due to the small coefficient value. For example, if the user listened to one more songs, the odds of becoming an adopter (p/(1-p)) will increase to around 1.000008 time, which is quite small.
+
+Three kinds of variables should be attached more importance to, which are gender (male and avg_friend_male), subscriber_friend_cnt, and good_country due to the large coefficient value.
+
+
+```{r}
+#odds ratio
+exp(coef(fit2))
+```
+
+
+##Takeaways
+
+- Target user
+
+From the descriptive statistics, it is shown that a typical adopter is older male with many male friends. In the meantime, the regression analysis shows that large age and male-gender (male and avg_friend_male) will increase the possibility of becoming an adopter. As a result, for High Node, the "free to fee" strategy should focus more on the older male since they are the target users. The company could display more ads to this group of user and develop more function to satisfy their needs to attract them to pay.
+
+- User engagement
+
+From the data visualization, adopter group is higher than non-adopter group in each aspects of user engagement, meaning that the more user engaged in the site, the more likely he/she will become adopter. Generally, the company should encourage users to interact with the site more frequently, such as recommending more songs to users. 
+
+- Globalization
+
+The company could consider to extend their business globally. This is because the regression analysis shows that user who is not from US, UK or Germany is more willing to pay. For example, if High Node attract more Asian users, the overall subscription rate would tend to increase.
+
+
+
+
+
+
+
