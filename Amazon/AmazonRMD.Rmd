@@ -1,0 +1,247 @@
+---
+title: "Amazon Social Network Team Assignment"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Team 9:
+##Shen Yang, Guanhang Chen, Wenya Shen, Damla Erten, & Pramodhini Somasekhar 
+
+# Q1 Data pre-processing
+
+```{r load data}
+#read data
+product = read.csv("products.csv")
+copurchase = read.csv("copurchase.csv")
+```
+
+
+```{r}
+library(dplyr)
+#delete not book product, the books with salesrank>150,000, and salesrank = -1 in product file
+product_book = filter(product, group == "Book" & salesrank != -1 & salesrank <= 150000)
+summary(product_book$group)
+```
+
+
+```{r}
+# delete not book product in copurchase
+id_not_need = which(!(copurchase$Target %in% product_book$id) | !(copurchase$Source %in% product_book$id))
+copurchase_book = copurchase[-id_not_need,]
+rm(id_not_need)
+# check if the result is correct
+setdiff(union(copurchase_book$Source,copurchase_book$Target), product_book$id)
+```
+
+
+
+# Q2+Q3 Calculate the in/out degree
+```{r}
+library("igraph")
+#Build network
+net = graph.data.frame(copurchase_book, directed = T)
+
+#Compute the degree
+node_degree = data.frame(name_node = V(net)$name,
+                         all_degree = degree(net, mode = "all"),
+                         in_degree = degree(net, mode = "in"),
+                         out_degree = degree(net, mode = "out"))
+head(node_degree)
+```
+
+
+
+# Q4 Extract subcomponent
+```{r}
+#Find the product with highest degree
+node_degree[which(node_degree$all_degree == max(node_degree$all_degree)),]
+
+#find its subcomponent
+sub1 = subcomponent(net, "33", "all")
+sub2 = subcomponent(net, "4429", "all")
+
+#check whether two subcomponents are the same
+setdiff(as.integer(as_ids(sub1)),as.integer(as_ids(sub2))) 
+
+#Build a new network based on the subcomponent
+net2 = induced.subgraph(net, sub1, impl = "auto")
+```
+
+# Q5 Visualize the subcomponent 
+```{r}
+#compute diameter
+D = diameter(net2, directed = T, weights = NA)
+D
+#find the component vertex of diameter
+D1 = get_diameter(net2, directed = T, weights = NA)
+D1
+```
+
+```{r}
+#Adjust some parameters to get a better layout
+
+#color all the vertex
+V(net2)$color = "gray"
+#colorthe vertex on diameter
+V(net2)[D1]$color = "yellow"
+#colorthe vertex has highest degree
+V(net2)["33"]$color = "red"
+V(net2)["4429"]$color = "red"
+
+#give size to all the vertex
+V(net2)$size = 1
+#give a larger size to the vertex on diameter
+V(net2)[D1]$size = 3
+#give largerest size to the vertex has highest degree
+V(net2)["33"]$size = 4
+V(net2)["4429"]$size = 4
+
+# Add some specific lables and legends.
+V(net2)["33"]$bookname = "Double Jeopardy"
+V(net2)["4429"]$bookname = "Harley-Davidson Panheads"
+```
+
+```{r}
+#plot
+set.seed(333)
+plot(net2, 
+     vertex.color = V(net2)$color, 
+     vertex.size = V(net2)$size, 
+     edge.arrow.size = 0.05, 
+     vertex.label = V(net2)$bookname,
+     vertex.label.dist = 10,
+     vertex.label.color = "black",
+     vertex.label.degree = pi,
+     vertex.label.cex = 1, 
+     layout=layout.lgl,     
+     main = "Subcomponent")
+
+legend(x=-0.4, y=-0.5, c("Nodes with highest degree","Nodes along the diameter", "Normal nodes"), pch=21,
+       col="#777777", pt.bg=c("red","yellow","gray"), pt.cex=2, pt.lwd = 1, bty="n", ncol=1)
+
+```
+
+####Insights about the plot
+- The red nodes,"Harley-Davidson Panheads" and "Double Jeopardy", are two books that has most connections. Also, customers would review or buy the similar books that related to the books that they already buy. It means that customers who bought these books will also have the chance to buy the books that have connection to them. The yellow nodes which are nodes along with diameter. We could see that the diameter has ten nodes on it so it indicates that it has a long network. Moreover, most of the normal nodes stay around two red nodes so it shows that the two red nodes have mutiple connections. Customers who buy these two books will also have larger chance to buy many other books in Amazon.
+
+
+# Q6 Compute various statistics about this network
+```{r}
+#degree_distribution
+deg = degree(net2, mode="all")
+deg.dist = degree_distribution(net2, cumulative = T, mode="all")
+plot( x=0:max(deg), y=1-deg.dist, pch=19, cex=1.2, col="orange", 
+      xlab="Degree", ylab="Cumulative Frequency")
+hist(deg, breaks=20, main="Histogram of node degree")
+
+#density
+edge_density(net2, loops = FALSE)
+
+#degree centrality
+centr_degree_tmax(net2, mode = "all", loops = FALSE)
+
+#in/out/all degree, closeness centrality, between centrality, and hub/authority scores 
+#for each node
+network_attributes = data.frame(
+  name_node2 = V(net2)$name,
+  all_degree=degree(net2, mode = "all"), 
+  in_degree=degree(net2, mode = "in"), 
+  out_degree=degree(net2, mode = "out"),
+  Closeness = closeness(net2, mode = "all", weights = NA, normalized = FALSE),
+  Betweenness = betweenness(net2, directed = T, weights = NA),
+  Hub_score = hub_score(net2)$vector,
+  Authority_score = authority.score(net2)$vector
+  )
+head(network_attributes)
+```
+
+#### Interpretation of the result: 
+
+- From the graph of degree distribution and the histogram of node degree, we can see that most of the nodes has low degree while only a few has high degree. 
+
+- Edge density measures the proportion edges in a network to the maximum number of possible edges. The closer to 1 the density is, the more interconnected for the network, as the edge density is 0.001436951 which is very close to 0, it shows that the network is not very interconnected. 
+
+- Closeness calculates the shortest path between all nodes and scores each node based on their closeness to all other nodes in the network. It shows us the nodes that are best placed to influence the entire network most quickly. After calculating for all the nodes, we can see that the scores are all very small which means that the nodes are similar in terms of the time they take to influence the network. 
+
+- Betweenness calculates the number of times a node lies on the shortest path between other nodes which shows us which nodes acts as bridges between nodes in a network. It is useful in finding out which nodes influences the flow around the network. After calcuating the betweenness of all the nodes, the highest value is the id number "2501" with a betweenness value of 298.0 and the second highest is id number "4429" with a value of 260.0. This shows us the id number "2501" which is the book "The Narcissistic Family : Diagnosis and Treatment" and "4429" the book "Harley-Davidson Panheads, 1948-1965/M418" are most influencial in this network.
+
+- The node with highest hub is "195144", which is book "Paradise Found : Growing Tropicals in Your Own Backyard which mean it has the highest out-degree.
+
+- The node that has the highest authority is id number "33" which is book Double Jeopardy (T*Witches, 6)" which mean it has the highest in-degree.
+
+# Q7 Information of neighbors
+```{r}
+#Merge and create a new data frame
+product_sub = merge(product_book, network_attributes, by.x = "id", by.y = "name_node2")
+
+#nghb_mn_rating, nghb_mn_salesrank, and nghb_mn_review_cnt
+for(i in 1:length(product_sub$id)){
+  id_neighbors = as.integer(as_ids(neighbors(net2,as.character(product_sub$id[i]),"in")))
+  
+  product_sub$nghb_mn_rating[i] = product_sub$rating[which(product_sub$id %in% id_neighbors)] %>%
+    mean()
+  
+  product_sub$nghb_mn_salesrank[i] = product_sub$salesrank[which(product_sub$id %in% id_neighbors)] %>%
+    mean()
+  
+  product_sub$nghb_mn_review_cnt[i] = product_sub$review_cnt[which(product_sub$id %in% id_neighbors)] %>%
+    mean()
+}
+head(product_sub)
+```
+
+
+
+# Q8 Poisson regression
+```{r}
+#Delete all_degree since the liner relationship between all_degree, in_degree, and out_degree.
+#Specify in_degree and out_degree may provide more detailed infomation.
+fit2 <- glm(salesrank ~ review_cnt + downloads + rating + in_degree + out_degree + Closeness 
+            + Betweenness + Hub_score + Authority_score 
+            + nghb_mn_rating + nghb_mn_salesrank + nghb_mn_review_cnt, 
+            data = product_sub, family = poisson(), na.action = na.exclude)
+summary(fit2)
+```
+####A robust method for std error is applied
+- The Deviance Residuals has little bit of skeweness because median is not exactly equal to 0. And 386 observations are deleted due to missingness. A robust method for std error is applied.
+
+```{r}
+library(sandwich)
+cov.output = vcovHC(fit2, type = "HC0")
+std.err = sqrt(diag(cov.output))
+robust = cbind(Estimation = coef(fit2), "Robust Std Err" = std.err, 
+               "Pr(>|z|)" = 2*pnorm(abs(coef(fit2)/std.err), lower.tail = FALSE),
+               LL = coef(fit2) - 1.96 * std.err,
+               UL = coef(fit2) + 1.96 * std.err)
+print(robust)
+```
+####All of the coefficients are siginificant. 
+- Closeness is significant at 0.05 level while others are significant at 0.001 level. In addition, Residual deviance equal to 15315200 on 505 degrees of freedom and AIC equal to 15321778, which are quite large since deviance/df should close to 1 if the model fits the data well. So further analysis about goodness of fit test is needed.
+
+```{r}
+#Performing the deviance goodness of fit test
+with(fit2, cbind(res.deviance = deviance, df = df.residual,
+                 p = pchisq(fit2$deviance, df=fit2$df.residual, lower.tail=FALSE)))
+```
+####Deviance goodness of fit test is performed
+- (By Jonathan Bartlett, "Deviance goodness of fit test for Poisson regression", http://thestatsgeek.com/2014/04/26/deviance-goodness-of-fit-test-for-poisson-regression/). 
+
+- To calculate the p-value for the deviance goodness of fit test we simply calculate the probability to the right of the deviance value for the chi-squared distribution on 505 degrees of freedom.
+
+- The null hypothesis is that our model is correctly specified, and there is strong evidence to reject that hypothesis, meaning that the model above is not very good. 
+
+
+```{r}
+#interpretation of coefficient
+exp(coef(fit2))
+```
+####Interpretation of the coeifficients 
+- The poisson regression is log-linear model. The results should be explained in exponential way. After transformation, the results are shown as follow: 
+- Since lower salesrank means higher sales, review_cnt, rating, Closeness, Betweenness, and nghb_mn_rating have the possitive effect while others have the negative effect to salesrank.
+- For example, when other varibles are hold as constant, 1 unit increase in review_cnt will cause 2.8%(1-0.972) decrease in salesrank.
+
+
+
